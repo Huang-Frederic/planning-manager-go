@@ -43,6 +43,7 @@ func userChoice(menu string, choice int) bool {
 	case "mainMenu":
 		switch choice {
 		case 1:
+			listRooms()
 			fmt.Println("List")
 			return subMenu()
 		case 2:
@@ -76,4 +77,16 @@ func userChoice(menu string, choice int) bool {
 		fmt.Println("ERROR, userChoice DEFAULT")
 		return true
 	}
+}
+
+func listRooms() {
+    rooms, err := GetRooms() // Récupérer les salles de la base de données
+    if err != nil {
+        fmt.Println("Erreur lors de la récupération des salles : ", err)
+    }
+
+    fmt.Println("Salles disponibles :")
+    for _, room := range rooms {
+        fmt.Printf("- %s (Capacité : %d)\n", room.Name, room.Capacity)
+    }
 }
