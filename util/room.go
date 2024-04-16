@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -49,4 +51,16 @@ func GetRooms() ([]Room, error) {
     }
 
     return rooms, nil
+}
+
+func listRooms() {
+    rooms, err := GetRooms() // Récupérer les salles de la base de données
+    if err != nil {
+        fmt.Println("Erreur lors de la récupération des salles : ", err)
+    }
+
+    fmt.Println("Salles disponibles :")
+    for _, room := range rooms {
+        fmt.Printf("- %s (Capacité : %d)\n", room.Name, room.Capacity)
+    }
 }
