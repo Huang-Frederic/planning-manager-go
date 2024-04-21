@@ -1,66 +1,68 @@
 package util
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-
-func AddRoom(name string, capacity int) error {
-    db, err := dbConnect()
-    if err != nil {
-        return err
-    }
-    defer db.Close()
-
-    _, err = db.Exec("INSERT INTO Room (name, capacity) VALUES (?, ?)", name, capacity)
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
-
-func GetRooms() ([]Room, error) {
-    db, err := dbConnect()
-    if err != nil {
-        return nil, err
-    }
-    defer db.Close()
-
-    rows, err := db.Query("SELECT id, name, capacity FROM Room")
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-
-    var rooms []Room
-
-    for rows.Next() {
-        var room Room
-        err := rows.Scan(&room.ID, &room.Name, &room.Capacity)
-        if err != nil {
-            return nil, err
-        }
-        rooms = append(rooms, room)
-    }
-
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
-
-    return rooms, nil
-}
-
+// Function to list rooms
 func listRooms() {
-    rooms, err := GetRooms() // Récupérer les salles de la base de données
+    reader := bufio.NewReader(os.Stdin)
+
+    UNBUFFER, _ := reader.ReadString('\n')
+	UNBUFFER = strings.TrimSpace(UNBUFFER)
+
+    fmt.Print("Entrez l'heure de début du créneau (format YYYY-MM-DD HH:MM:SS) : ")
+    startTimeInput, _ := reader.ReadString('\n')
+	startTimeInput = strings.TrimSpace(startTimeInput)
+	startTime, err := time.Parse("2006-01-02 15:04:05", startTimeInput)
+	if err != nil {
+		fmt.Println("----------------------------------------------------")
+		fmt.Println("Format de date invalide pour l'heure de début.")
+		fmt.Println("----------------------------------------------------")
+		return
+	}
+
+    fmt.Print("Entrez l'heure de fin du créneau (format YYYY-MM-DD HH:MM:SS) : ")
+    endTimeInput, _ := reader.ReadString('\n')
+	endTimeInput = strings.TrimSpace(endTimeInput)
+	endTime, err := time.Parse("2006-01-02 15:04:05", endTimeInput)
+	if err != nil {
+		fmt.Println("----------------------------------------------------")
+		fmt.Println("Format de date invalide pour l'heure de fin.")
+		fmt.Println("----------------------------------------------------")
+		return 
+	}
+
+	if startTime.After(endTime) {
+		fmt.Println("----------------------------------------------------")
+		fmt.Println("La date de début ne peut pas être après la date de fin.")
+		fmt.Println("----------------------------------------------------")
+		return 
+	}
+
+    // Récupérez les salles de la base de données
+    rooms, err := getRooms()
     if err != nil {
+        fmt.Println("----------------------------------------------------")
         fmt.Println("Erreur lors de la récupération des salles : ", err)
+        fmt.Println("----------------------------------------------------")
+        return
     }
 
-    fmt.Println("Salles disponibles :")
+    // Affichez les salles disponibles pour le créneau spécifié
+    fmt.Println("")
+    fmt.Println("Salles disponibles pour le créneau spécifié :")
+    fmt.Println("----------------------------------------------------")
     for _, room := range rooms {
-        fmt.Printf("- %s (Capacité : %d)\n", room.Name, room.Capacity)
+        if isRoomAvailable(room.ID, startTime, endTime) {
+            fmt.Printf("%d. %s (Capacité : %d)\n", room.ID, room.Name, room.Capacity)
+        }
     }
+    fmt.Println("")
 }
